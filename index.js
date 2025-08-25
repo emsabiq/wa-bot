@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys")
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys")
 const QRCode = require("qrcode")
 const express = require("express")
 const axios = require("axios")
@@ -19,22 +19,28 @@ async function start() {
 
   // load state Baileys
   const { state, saveCreds } = await useMultiFileAuthState(authPath)
-  const sock = makeWASocket({ auth: state })
+  const sock = makeWASocket({ auth: state, printQRInTerminal: false })
 
   // simpan session tiap ada update
   sock.ev.on("creds.update", saveCreds)
 
   // tampilkan QR kalau perlu login baru
-  sock.ev.on("connection.update", ({ qr, connection }) => {
+  sock.ev.on("connection.update", ({ qr, connection, lastDisconnect }) => {
     if (qr) {
       QRCode.toDataURL(qr, function (err, url) {
         if (err) return console.error("QR gagal dibuat:", err)
         console.log("✅ Buka link ini di browser untuk scan QR:")
-        console.log(url) // buka link ini di browser → muncul QR
+        console.log(url) // buka di browser → muncul QR
       })
     }
     if (connection === "open") {
       console.log("✅ WhatsApp Bot sudah terhubung!")
+    }
+    if (connection === "close") {
+      const reason = lastDisconnect?.error?.output?.statusCode
+      console.error("❌ Connection closed. Reason:", reason || lastDisconnect?.error)
+      console.log("🔄 Reconnecting in 5s...")
+      setTimeout(start, 5000) // auto restart
     }
   })
 
