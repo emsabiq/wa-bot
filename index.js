@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState } = require("@adiwajshing/baileys")
+const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys")
 const qrcode = require("qrcode-terminal")
 const express = require("express")
 const axios = require("axios")
@@ -36,7 +36,10 @@ async function start() {
     await sock.sendMessage(to, { text: message })
     res.send("ok")
   })
-  app.listen(3000, () => console.log("Bot listening on 3000"))
+
+  // ✅ pakai PORT dari Railway
+  const PORT = process.env.PORT || 3000
+  app.listen(PORT, () => console.log("Bot listening on " + PORT))
 }
 
 start()
