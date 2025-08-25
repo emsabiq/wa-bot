@@ -49,19 +49,21 @@ async function start() {
     const msg = messages[0]
     if (!msg.message) return
 
-    const text = msg.message.conversation || msg.message.extendedTextMessage?.text
+    const text =
+      msg.message.conversation ||
+      msg.message.extendedTextMessage?.text ||
+      msg.message?.imageMessage?.caption ||
+      "⛔ Pesan tidak terbaca"
     const sender = msg.key.remoteJid
 
     console.log("📩 Pesan masuk:", sender, text)
 
     // kirim ke n8n webhook
     try {
-await axios.post("https://adamar.app.n8n.cloud/webhook-test/wa-in", {
-  sender,
-  text,
-  timestamp: new Date().toISOString()
-})
-
+      await axios.post("https://adamar.app.n8n.cloud/webhook-test/wa-in", {
+        sender,
+        text,
+        timestamp: new Date().toISOString()
       })
     } catch (err) {
       console.error("❌ Gagal kirim ke n8n:", err.message)
@@ -88,4 +90,3 @@ await axios.post("https://adamar.app.n8n.cloud/webhook-test/wa-in", {
 }
 
 start()
-
