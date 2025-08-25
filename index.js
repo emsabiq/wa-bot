@@ -60,7 +60,7 @@ async function start() {
 
     // kirim ke n8n webhook
     try {
-      await axios.post("https://adamar.app.n8n.cloud/webhook-test/wa-in", {
+      await axios.post("https://adamar.app.n8n.cloud/webhook/wa-in", {
         sender,
         text,
         timestamp: new Date().toISOString()
@@ -90,3 +90,4 @@ async function start() {
 }
 
 start()
+
