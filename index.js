@@ -1,22 +1,36 @@
 const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys")
-const QRCode = require("qrcode")   // biar QR bisa discan gampang
+const QRCode = require("qrcode")
 const express = require("express")
 const axios = require("axios")
+const fs = require("fs")
+const path = require("path")
 
 async function start() {
-  const { state, saveCreds } = await useMultiFileAuthState("auth")
+  // 📌 lokasi folder auth
+  const authPath = path.join(__dirname, "auth")
+  const credsFile = path.join(authPath, "creds.json")
+
+  // kalau ada ENV AUTH_DATA → buatkan file auth/creds.json
+  if (process.env.AUTH_DATA) {
+    if (!fs.existsSync(authPath)) fs.mkdirSync(authPath)
+    fs.writeFileSync(credsFile, process.env.AUTH_DATA)
+    console.log("✅ AUTH_DATA dari ENV ditulis ke auth/creds.json")
+  }
+
+  // load state Baileys
+  const { state, saveCreds } = await useMultiFileAuthState(authPath)
   const sock = makeWASocket({ auth: state })
 
-  // simpan session creds
+  // simpan session tiap ada update
   sock.ev.on("creds.update", saveCreds)
 
-  // tampilkan QR saat pertama kali login
+  // tampilkan QR kalau perlu login baru
   sock.ev.on("connection.update", ({ qr, connection }) => {
     if (qr) {
       QRCode.toDataURL(qr, function (err, url) {
         if (err) return console.error("QR gagal dibuat:", err)
         console.log("✅ Buka link ini di browser untuk scan QR:")
-        console.log(url) // buka di browser → keluar QR code PNG
+        console.log(url) // buka link ini di browser → muncul QR
       })
     }
     if (connection === "open") {
@@ -24,7 +38,7 @@ async function start() {
     }
   })
 
-  // event ketika pesan baru masuk
+  // event pesan masuk
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0]
     if (!msg.message) return
